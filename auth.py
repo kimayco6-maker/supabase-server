@@ -16,13 +16,20 @@ cooldown_storage = {}
 def verify_token(token):
     """Verify Supabase JWT token"""
     try:
-        # Decode JWT token without audience verification
-        # Supabase tokens have varying audience formats
+        # First, decode without verification to see the token structure
+        unverified = jwt.decode(token, options={"verify_signature": False})
+        print(f"Token algorithm: {jwt.get_unverified_header(token).get('alg')}")
+        print(f"Token payload (unverified): {unverified}")
+        
+        # Now verify with signature
         payload = jwt.decode(
             token,
             Config.SUPABASE_JWT_SECRET,
-            algorithms=['HS256'],
-            options={"verify_aud": False}
+            algorithms=['HS256', 'HS384', 'HS512'],
+            options={
+                "verify_aud": False,
+                "verify_signature": True
+            }
         )
         return payload
     except jwt.ExpiredSignatureError:
@@ -30,6 +37,9 @@ def verify_token(token):
         return None
     except jwt.InvalidTokenError as e:
         print(f"Invalid token: {e}")
+        return None
+    except Exception as e:
+        print(f"Token verification error: {e}")
         return None
 
 def require_auth(f):
