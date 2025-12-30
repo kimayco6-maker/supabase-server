@@ -65,6 +65,8 @@ def signup():
         if not email or not password:
             return jsonify({'error': 'Email and password required'}), 400
         
+        print(f"Attempting to create account for: {email}")
+        
         # Create auth user
         response = supabase.auth.sign_up({
             'email': email,
@@ -76,7 +78,10 @@ def signup():
             }
         })
         
+        print(f"Supabase response: {response}")
+        
         if response.user:
+            print(f"Account created successfully: {response.user.id}")
             return jsonify({
                 'message': 'Account created successfully',
                 'user': {
@@ -85,11 +90,13 @@ def signup():
                 }
             }), 201
         else:
+            print("No user in response")
             return jsonify({'error': 'Failed to create account'}), 400
             
     except Exception as e:
-        print(f"Signup error: {e}")
-        return jsonify({'error': str(e)}), 500
+        print(f"Signup error: {type(e).__name__}: {e}")
+        traceback.print_exc()
+        return jsonify({'error': f'{type(e).__name__}: {str(e)}'}), 500
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
