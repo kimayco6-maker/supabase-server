@@ -127,34 +127,28 @@ class FishingGame:
                 .execute()
     
     def save_catch(self, player_id: str, fish: Dict, weight: float, is_personal_best: bool) -> Optional[Dict]:
-        """Save catch to database"""
-        catch_data = {
-            'player_id': player_id,
-            'fish_species_id': fish['id'],
-            'weight': weight,
-            'is_personal_best': is_personal_best,
-            'points_earned': fish['points']
-        }
-        
-        # Insert catch
-        response = self.supabase.table('catches')\
-            .insert(catch_data)\
-            .execute()
-        
-        if response.data:
-            # Update player stats
-            self.supabase.rpc('update_player_stats', {
+        """Save catch to database using secure RPC function"""
+        try:
+            # Use secure SECURITY DEFINER function to bypass RLS
+            response = self.supabase.rpc('insert_catch', {
                 'p_player_id': player_id,
-                'p_points': fish['points']
+                'p_fish_species_id': fish['id'],
+                'p_weight': weight,
+                'p_is_personal_best': is_personal_best,
+                'p_points_earned': fish['points']
             }).execute()
             
-            # Update personal best flags
-            if is_personal_best:
-                self.update_personal_best_flags(player_id, fish['id'])
+            if response.data and len(response.data) > 0:
+                # Update personal best flags if needed
+                if is_personal_best:
+                    self.update_personal_best_flags(player_id, fish['id'])
+                
+                return response.data[0]
             
-            return response.data[0]
-        
-        return None
+            return None
+        except Exception as e:
+            print(f"Error saving catch: {e}")
+            raise
     
     def cast_line(self, player_id: str) -> CastResult:
         """

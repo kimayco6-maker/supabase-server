@@ -35,7 +35,27 @@ except ValueError as e:
 print(f"Initializing Supabase with URL: {Config.SUPABASE_URL}")
 print(f"Service key starts with: {Config.SUPABASE_SERVICE_KEY[:20]}...")
 print(f"Service key contains 'service_role': {'service_role' in Config.SUPABASE_SERVICE_KEY}")
-supabase = create_client(Config.SUPABASE_URL, Config.SUPABASE_SERVICE_KEY)
+
+# Create client with explicit service role configuration
+from supabase import ClientOptions
+options = ClientOptions(
+    auto_refresh_token=False,
+    persist_session=False,
+    schema="public"
+)
+supabase = create_client(
+    Config.SUPABASE_URL,
+    Config.SUPABASE_SERVICE_KEY,
+    options=options
+)
+
+# Test service role access
+try:
+    print("Testing service role access...")
+    test_response = supabase.table('fish_species').select('id').limit(1).execute()
+    print(f"✓ Service role can read: {len(test_response.data) if test_response.data else 0} records")
+except Exception as e:
+    print(f"✗ Service role read test failed: {e}")
 
 # Initialize game logic
 game = FishingGame(supabase)
