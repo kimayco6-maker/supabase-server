@@ -32,6 +32,9 @@ except ValueError as e:
     exit(1)
 
 # Initialize Supabase client (with service role key - has write access)
+print(f"Initializing Supabase with URL: {Config.SUPABASE_URL}")
+print(f"Service key starts with: {Config.SUPABASE_SERVICE_KEY[:20]}...")
+print(f"Service key contains 'service_role': {'service_role' in Config.SUPABASE_SERVICE_KEY}")
 supabase = create_client(Config.SUPABASE_URL, Config.SUPABASE_SERVICE_KEY)
 
 # Initialize game logic
