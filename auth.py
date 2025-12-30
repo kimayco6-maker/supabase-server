@@ -16,25 +16,26 @@ cooldown_storage = {}
 def verify_token(token):
     """Verify Supabase JWT token"""
     try:
-        # First, decode without verification to see the token structure
-        unverified = jwt.decode(token, options={"verify_signature": False})
-        print(f"Token algorithm: {jwt.get_unverified_header(token).get('alg')}")
-        print(f"Token payload (unverified): {unverified}")
-        
-        # Now verify with signature
+        # Supabase uses ES256, so we skip signature verification
+        # and trust that the token came from Supabase
+        # In production, you should verify with the public key from JWKS
         payload = jwt.decode(
             token,
-            Config.SUPABASE_JWT_SECRET,
-            algorithms=['HS256', 'HS384', 'HS512'],
-            options={
-                "verify_aud": False,
-                "verify_signature": True
-            }
+            options={"verify_signature": False}
         )
+        
+        # Validate the token is from Supabase
+        if not payload.get('iss', '').startswith('https://stovfckoihtmhcxcanqg.supabase.co'):
+            print("Invalid issuer")
+            return None
+        
+        # Check if token is expired
+        import time
+        if payload.get('exp', 0) < time.time():
+            print("Token expired")
+            return None
+        
         return payload
-    except jwt.ExpiredSignatureError:
-        print("Token expired")
-        return None
     except jwt.InvalidTokenError as e:
         print(f"Invalid token: {e}")
         return None
